@@ -1,6 +1,6 @@
 # Valt
 
-`Valt` is a simple lexical analyzer written in `C99`. 
+`Valt` is a simple lexical analyzer written in `C99`.
 
 ---
 
