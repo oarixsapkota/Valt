@@ -1,0 +1,91 @@
+// Include global library header
+@inc <io.fh> // scanf, print and printf func
+// Include local files
+
+// link global library
+@lib <ferrum.o>
+// link local library
+@lib "mylib.o"
+
+// include raw binary file data
+@embed "exe.bin"
+
+func inc(long *a) ? int;
+
+def object Person;
+object {
+  int age;
+  string name;
+  bool walking;
+  string speak = "I can speak";
+  func speak() ? void {
+    if (walking) {
+      print("%s is walking\n");
+    } elif (age == 16) {
+      print("I am sweet 16\n");
+    } elif (age < 14) {
+      print("I am a child\n");
+    } elif (age > 20) {
+      print("I am over 20\n");
+    } elif (age != 16) {
+      print("I am not sweet 16\n");
+    } else {
+      print("%s\n", speak);
+    }
+  }
+  func get_age(Person *self);
+} Person;
+
+func get_age(Person *self) ? int {
+  return self->age;
+};
+
+func main() ? int {
+  char *c_srt = "\n! ferrum_lang";
+
+  Person noname;
+
+  noname.name = "noname";
+  print("Enter noname's age : ");
+  scanf("%d", &noname.age);
+  noname.walking = false;
+
+  noname.get_age = person_get_age; // TODO : method assignment
+
+  printf("%s is %d years old%s\n", noname.name, noname.get_age(), c_srt);
+
+  int a;
+
+  a = 0;
+
+  // entry control
+  while (a != 90) ++a;
+  // exit control
+  // do { ... } while ( ... );
+
+  while (a < 90) {
+    a++;
+  } elif (a > 90) {
+    a--;
+  } // else { ... }
+
+  printf("%s is %d years old\n", noname.name, noname.get_age());
+
+  guard (a == 90) {
+    --a; // guara : entry and exit control : loop
+  } (a == 16);
+
+  // for (int i; i < 5, ++i) { ... }
+
+  long b = 0;
+  inc(&b);
+
+  noname.speak();
+
+  return 0;
+}
+
+func inc(long *a) ? long {
+  long b = (*a)++;
+  return b;
+}

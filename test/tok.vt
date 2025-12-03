@@ -1,0 +1,68 @@
+// Keywords
+// functions
+func
+return
+pass
+// Controlflow
+// branch
+if
+elif
+else
+pass
+// loop
+do
+while
+for
+guard
+// loop control
+break
+continue
+// Type
+void   // 0 bytes
+char   // 1 byte  ( uint8 )
+bool   // 1 byte ( uint8 )
+float  // 4 byte ( float32 )
+int    // 4 byte ( int32 )
+string // 8 byte ( uint32 ptr && uint32 length )
+// Float types
+float32  // 04 byts
+float64  // 08 byts
+float128 // 16 byts
+// Int type
+int8   // 1 byte
+int16  // 2 byts
+int32  // 4 byts
+int64  // 8 byts
+uint8  // 1 byte
+uint16 // 2 byte
+uint32 // 4 byte
+uint64 // 8 byte
+// Misc
+object // size of all members combined
+array  // 9 byte ( uint8 type && uint32 ptr && uint32 length )
+
+
+// punctuations
+({[]});:,?
+// Assign
+=
++=
+-=
+*=
+/=
+%=
+// unary
+++ -- !
+// Additive
+- +
+// Multiplicative
+* / %
+// Relative
+== !=
+// Equative
+> < >= <=
+// Logical
+&&
+||
+// Access
+-> .
