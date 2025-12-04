@@ -3,12 +3,28 @@
 `Valt` is a simple lexical analyzer written in `C99`.
 
 ---
+## Cloning
 
 Clone the repository:
 ```bash
-git clone https://github.com/oarixsapkota/ferrum.git
+git clone https://github.com/oarixsapkota/Valt.git
 ```
+---
 
+## Build
+on linux or `Unix`
+```bash
+mkdir build
+cd build
+cmake -G "Makefiles" ..
+```
+---
+on windows or `MinGW`
+```powershell
+mkdir build
+cd build
+cmake -G "MinGW Makefiles" ..
+```
 ---
 
 ## License
