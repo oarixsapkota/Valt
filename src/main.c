@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "inc/lexer.h"
 #include "inc/utils.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 void print_tokens(Token *token) {
   while (token) {
@@ -12,11 +12,9 @@ void print_tokens(Token *token) {
         printf("IDENT\t: %s\n", token->value);
       } else if (token->type == TOKEN_LABEL) {
         printf("LABEL\t: %s\n", token->value);
-      } else if (token->type == TOKEN_LIT_INT ||
-                 token->type == TOKEN_LIT_FLOAT) {
+      } else if (token->type == TOKEN_LIT_INT || token->type == TOKEN_LIT_FLOAT) {
         printf("NUM\t: %s\n", token->value);
-      } else if (token->type == TOKEN_LIT_STRING ||
-                 token->type == TOKEN_LIT_CHARACTER) {
+      } else if (token->type == TOKEN_LIT_STRING || token->type == TOKEN_LIT_CHARACTER) {
         printf("QUOT\t: %s\n", token->value);
       }
     } else {

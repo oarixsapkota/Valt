@@ -1,4 +1,5 @@
 #include "inc/lexer.h"
+
 #include "inc/token.h"
 #include "inc/valt.h"
 
@@ -7,8 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *allocate_sub_string(const char *buffer, const uint64 start,
-                          const uint64 end) {
+char *allocate_sub_string(const char *buffer, const uint64 start, const uint64 end) {
   const uint64 word_size = end - start;
   char *out = malloc(word_size + 1);
   if (!out) {
@@ -79,22 +79,19 @@ TokenType get_word_type(const char *word) {
   return TOKEN_IDENTIFIER;
 }
 
-char *get_digit(const char *buffer, uint64 *index, uint32 *char_num,
-                const uint64 line_num, uint8 *is_float) {
+char *get_digit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num, uint8 *is_float) {
   const uint64 start = *index;
   *is_float = 0;
   while (isdigit(buffer[*index]) || buffer[*index] == '.') {
     if (buffer[*index] == '.') {
       if (!isdigit(buffer[*index + 1])) {
-        fprintf(stderr, "Incomplete Float literal at line %lld char %d.\n",
-                line_num, *char_num);
+        fprintf(stderr, "Incomplete Float literal at line %lld char %d.\n", line_num, *char_num);
         return NULL;
       }
       (*is_float)++;
     }
     if (*is_float >= 2) {
-      fprintf(stderr, "Invalid symbol `.' at line %lld char %d\n", line_num,
-              *char_num);
+      fprintf(stderr, "Invalid symbol `.' at line %lld char %d\n", line_num, *char_num);
       return NULL;
     }
     (*index)++;
@@ -103,18 +100,15 @@ char *get_digit(const char *buffer, uint64 *index, uint32 *char_num,
   return allocate_sub_string(buffer, start, *index);
 }
 
-char *get_char_lit(const char *buffer, uint64 *index, uint32 *char_num,
-                   const uint64 line_num) {
+char *get_char_lit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num) {
   (*index)++;
   const uint64 start = *index;
-  while (buffer[*index] != '\'' && buffer[*index] != '\0' &&
-         buffer[*index] != '\n') {
+  while (buffer[*index] != '\'' && buffer[*index] != '\0' && buffer[*index] != '\n') {
     (*index)++;
     (*char_num)++;
   }
   if (buffer[*index] == '\0' || buffer[*index] == '\n') {
-    fprintf(stderr, "Unterminated character literal at line %lld char %d.\n",
-            line_num, *char_num);
+    fprintf(stderr, "Unterminated character literal at line %lld char %d.\n", line_num, *char_num);
     return NULL;
   }
   char *out = allocate_sub_string(buffer, start, *index);
@@ -122,18 +116,15 @@ char *get_char_lit(const char *buffer, uint64 *index, uint32 *char_num,
   return out;
 }
 
-char *get_str_lit(const char *buffer, uint64 *index, uint32 *char_num,
-                  const uint64 line_num) {
+char *get_str_lit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num) {
   (*index)++;
   const uint64 start = *index;
-  while (buffer[*index] != '"' && buffer[*index] != '\0' &&
-         buffer[*index] != '\n') {
+  while (buffer[*index] != '"' && buffer[*index] != '\0' && buffer[*index] != '\n') {
     (*index)++;
     (*char_num)++;
   }
   if (buffer[*index] == '\0' || buffer[*index] == '\n') {
-    fprintf(stderr, "Unterminated String literal at line %lld char %d.\n",
-            line_num, *char_num);
+    fprintf(stderr, "Unterminated String literal at line %lld char %d.\n", line_num, *char_num);
     return NULL;
   }
   char *out = allocate_sub_string(buffer, start, *index);
@@ -141,8 +132,7 @@ char *get_str_lit(const char *buffer, uint64 *index, uint32 *char_num,
   return out;
 }
 
-void push_token(Token *token_head, Token **token_tail, const TokenType type,
-                char *value) {
+void push_token(Token *token_head, Token **token_tail, const TokenType type, char *value) {
   Token *new_token = malloc(sizeof(Token));
   if (!new_token) {
     fprintf(stderr, "Memory allocation failed.\n");
@@ -192,8 +182,7 @@ Token *lexer(const char *buffer) {
     } else if (isspace(buffer[index])) {
       index++;
       char_num++;
-    } else if (isdigit(buffer[index]) ||
-               (buffer[index] == '.' && isdigit(buffer[index + 1]))) {
+    } else if (isdigit(buffer[index]) || (buffer[index] == '.' && isdigit(buffer[index + 1]))) {
       uint8 is_float;
       char *digit = get_digit(buffer, &index, &char_num, line_num, &is_float);
       TokenType type = (is_float == 1) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
@@ -224,203 +213,201 @@ Token *lexer(const char *buffer) {
       push_token(head, &token_tail, TOKEN_LIT_STRING, str_lit);
     } else {
       switch (buffer[index]) {
-      case '/':
-        if (buffer[index + 1] == '/') {
-          while (buffer[index] != '\n')
+        case '/':
+          if (buffer[index + 1] == '/') {
+            while (buffer[index] != '\n')
+              index++;
+          } else if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_SLASH_EQ, NULL);
             index++;
-        } else if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_SLASH_EQ, NULL);
-          index++;
-          char_num++;
-        } else {
-          push_token(head, &token_tail, TOKEN_SLASH, NULL);
-          index++;
-          char_num++;
-        }
-        break;
+            char_num++;
+          } else {
+            push_token(head, &token_tail, TOKEN_SLASH, NULL);
+            index++;
+            char_num++;
+          }
+          break;
 
-      case '=':
-        if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_EQUAL, NULL);
+        case '=':
+          if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_EQUAL, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_ASSIGN, NULL);
           index++;
           char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_ASSIGN, NULL);
-        index++;
-        char_num++;
-        break;
-      case '>':
-        if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_GREATER_EQ, NULL);
+          break;
+        case '>':
+          if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_GREATER_EQ, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_GREATER, NULL);
           index++;
           char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_GREATER, NULL);
-        index++;
-        char_num++;
-        break;
-      case '<':
-        if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_LESS_EQ, NULL);
+          break;
+        case '<':
+          if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_LESS_EQ, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_LESS, NULL);
           index++;
           char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_LESS, NULL);
-        index++;
-        char_num++;
-        break;
+          break;
 
-      case '+':
-        if (buffer[index + 1] == '+') {
-          push_token(head, &token_tail, TOKEN_2_PLUS, NULL);
+        case '+':
+          if (buffer[index + 1] == '+') {
+            push_token(head, &token_tail, TOKEN_2_PLUS, NULL);
+            index++;
+            char_num++;
+          } else if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_PLUS_EQ, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_PLUS, NULL);
           index++;
           char_num++;
-        } else if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_PLUS_EQ, NULL);
+          break;
+        case '-':
+          if (buffer[index + 1] == '-') {
+            push_token(head, &token_tail, TOKEN_2_MINUS, NULL);
+            index++;
+            char_num++;
+          } else if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_MINUS_EQ, NULL);
+            index++;
+            char_num++;
+          } else if (buffer[index + 1] == '>') {
+            push_token(head, &token_tail, TOKEN_ARROW, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_MINUS, NULL);
           index++;
           char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_PLUS, NULL);
-        index++;
-        char_num++;
-        break;
-      case '-':
-        if (buffer[index + 1] == '-') {
-          push_token(head, &token_tail, TOKEN_2_MINUS, NULL);
+          break;
+        case '*':
+          if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_STAR_EQ, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_STAR, NULL);
           index++;
           char_num++;
-        } else if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_MINUS_EQ, NULL);
+          break;
+        case '%':
+          if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_PERC_EQ, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_PERCENT, NULL);
           index++;
           char_num++;
-        } else if (buffer[index + 1] == '>') {
-          push_token(head, &token_tail, TOKEN_ARROW, NULL);
-          index++;
-          char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_MINUS, NULL);
-        index++;
-        char_num++;
-        break;
-      case '*':
-        if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_STAR_EQ, NULL);
-          index++;
-          char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_STAR, NULL);
-        index++;
-        char_num++;
-        break;
-      case '%':
-        if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_PERC_EQ, NULL);
-          index++;
-          char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_PERCENT, NULL);
-        index++;
-        char_num++;
-        break;
+          break;
 
-      case '!':
-        if (buffer[index + 1] == '=') {
-          push_token(head, &token_tail, TOKEN_NOT_EQ, NULL);
+        case '!':
+          if (buffer[index + 1] == '=') {
+            push_token(head, &token_tail, TOKEN_NOT_EQ, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_BANG, NULL);
           index++;
           char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_BANG, NULL);
-        index++;
-        char_num++;
-        break;
+          break;
 
-      case '&':
-        if (buffer[index + 1] == '&') {
-          push_token(head, &token_tail, TOKEN_AND, NULL);
+        case '&':
+          if (buffer[index + 1] == '&') {
+            push_token(head, &token_tail, TOKEN_AND, NULL);
+            index++;
+            char_num++;
+          } else
+            push_token(head, &token_tail, TOKEN_ADDRESS_OF, NULL);
           index++;
           char_num++;
-        } else
-          push_token(head, &token_tail, TOKEN_ADDRESS_OF, NULL);
-        index++;
-        char_num++;
-        break;
-      case '|':
-        if (buffer[index + 1] == '|') {
-          push_token(head, &token_tail, TOKEN_OR, NULL);
+          break;
+        case '|':
+          if (buffer[index + 1] == '|') {
+            push_token(head, &token_tail, TOKEN_OR, NULL);
+            index++;
+            char_num++;
+          } else
+            fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n", buffer[index], line_num, char_num);
           index++;
           char_num++;
-        } else
-          fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n",
-                  buffer[index], line_num, char_num);
-        index++;
-        char_num++;
-        break;
+          break;
 
-      case '.':
-        push_token(head, &token_tail, TOKEN_DOT, NULL);
-        index++;
-        char_num++;
-        break;
-
-      case '(':
-        push_token(head, &token_tail, TOKEN_O_PREN, NULL);
-        index++;
-        char_num++;
-        break;
-      case ')':
-        push_token(head, &token_tail, TOKEN_C_PREN, NULL);
-        index++;
-        char_num++;
-        break;
-      case '[':
-        push_token(head, &token_tail, TOKEN_O_BRACKET, NULL);
-        index++;
-        char_num++;
-        break;
-      case ']':
-        push_token(head, &token_tail, TOKEN_C_BRACKET, NULL);
-        index++;
-        char_num++;
-        break;
-      case '{':
-        push_token(head, &token_tail, TOKEN_O_BRACE, NULL);
-        index++;
-        char_num++;
-        break;
-      case '}':
-        push_token(head, &token_tail, TOKEN_C_BRACE, NULL);
-        index++;
-        char_num++;
-        break;
-      case ':':
-        push_token(head, &token_tail, TOKEN_COLN, NULL);
-        index++;
-        char_num++;
-        break;
-      case ';':
-        push_token(head, &token_tail, TOKEN_SEMI_COLN, NULL);
-        index++;
-        char_num++;
-        break;
-      case '?':
-        push_token(head, &token_tail, TOKEN_QUESTION, NULL);
-        index++;
-        char_num++;
-        break;
-      case ',':
-        push_token(head, &token_tail, TOKEN_COMMA, NULL);
-        index++;
-        char_num++;
-        break;
-
-      default:
-        fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n",
-                buffer[index], line_num, char_num);
-        while (isspace(buffer[index]))
+        case '.':
+          push_token(head, &token_tail, TOKEN_DOT, NULL);
           index++;
-        char_num++;
-        index++;
-        break;
+          char_num++;
+          break;
+
+        case '(':
+          push_token(head, &token_tail, TOKEN_O_PREN, NULL);
+          index++;
+          char_num++;
+          break;
+        case ')':
+          push_token(head, &token_tail, TOKEN_C_PREN, NULL);
+          index++;
+          char_num++;
+          break;
+        case '[':
+          push_token(head, &token_tail, TOKEN_O_BRACKET, NULL);
+          index++;
+          char_num++;
+          break;
+        case ']':
+          push_token(head, &token_tail, TOKEN_C_BRACKET, NULL);
+          index++;
+          char_num++;
+          break;
+        case '{':
+          push_token(head, &token_tail, TOKEN_O_BRACE, NULL);
+          index++;
+          char_num++;
+          break;
+        case '}':
+          push_token(head, &token_tail, TOKEN_C_BRACE, NULL);
+          index++;
+          char_num++;
+          break;
+        case ':':
+          push_token(head, &token_tail, TOKEN_COLN, NULL);
+          index++;
+          char_num++;
+          break;
+        case ';':
+          push_token(head, &token_tail, TOKEN_SEMI_COLN, NULL);
+          index++;
+          char_num++;
+          break;
+        case '?':
+          push_token(head, &token_tail, TOKEN_QUESTION, NULL);
+          index++;
+          char_num++;
+          break;
+        case ',':
+          push_token(head, &token_tail, TOKEN_COMMA, NULL);
+          index++;
+          char_num++;
+          break;
+
+        default:
+          fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n", buffer[index], line_num, char_num);
+          while (isspace(buffer[index]))
+            index++;
+          char_num++;
+          index++;
+          break;
       }
     }
   }
