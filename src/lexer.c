@@ -31,7 +31,6 @@ char *get_word(const char *buffer, uint64 *index, uint32 *char_num) {
 
 TokenType get_word_type(const char *word) {
   const Keyword keyword[] = {
-      // KYE-PARE
       // Type
       {"void", TOKEN_VOID},         // void
       {"char", TOKEN_CHAR},         // unsigned int
@@ -50,8 +49,8 @@ TokenType get_word_type(const char *word) {
       {"float64", TOKEN_FLOAT64},   // float
       {"float128", TOKEN_FLOAT128}, // float
       {"string", TOKEN_STRING},     // string
-      {"array", TOKEN_ARRAY},       // string
-      {"object", TOKEN_OBJECT},     // string
+      {"array", TOKEN_ARRAY},       // array
+      {"object", TOKEN_OBJECT},     // object
       // Function
       {"func", TOKEN_FUNC},     // function
       {"return", TOKEN_RETURN}, // return
@@ -59,7 +58,7 @@ TokenType get_word_type(const char *word) {
       // Branching
       {"if", TOKEN_IF},     // if stmt
       {"elif", TOKEN_ELIF}, // else_if-clause
-      {"else", TOKEN_ELSE}, // string
+      {"else", TOKEN_ELSE}, // else-clause
       // Looping
       {"do", TOKEN_DO},       // do
       {"while", TOKEN_WHILE}, // while
