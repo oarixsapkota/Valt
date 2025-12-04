@@ -1,3 +1,15 @@
+// ID
+_identifier
+_label:
+
+// Literals
+"string"
+'A'
+1234
+1.234
+true
+false
+
 // Keywords
 // functions
 func
@@ -8,7 +20,6 @@ pass
 if
 elif
 else
-pass
 // loop
 do
 while
@@ -21,8 +32,8 @@ continue
 void   // 0 bytes
 char   // 1 byte  ( uint8 )
 bool   // 1 byte ( uint8 )
-float  // 4 byte ( float32 )
 int    // 4 byte ( int32 )
+float  // 4 byte ( float32 )
 string // 8 byte ( uint32 ptr && uint32 length )
 // Float types
 float32  // 04 byts
@@ -45,12 +56,7 @@ array  // 9 byte ( uint8 type && uint32 ptr && uint32 length )
 // punctuations
 ({[]});:,?
 // Assign
-=
-+=
--=
-*=
-/=
-%=
+= += -= *= /= %=
 // unary
 ++ -- !
 // Additive
@@ -62,7 +68,6 @@ array  // 9 byte ( uint8 type && uint32 ptr && uint32 length )
 // Equative
 > < >= <=
 // Logical
-&&
-||
+&& ||
 // Access
 -> .

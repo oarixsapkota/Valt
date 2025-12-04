@@ -28,8 +28,7 @@ enum TokenType {
   // Loop Control
   TOKEN_BREAK,
   TOKEN_CONTINUE,
-
-  // TOKEN Types
+  // Types
   TOKEN_VOID,
   TOKEN_CHAR,
   TOKEN_BOOL,
@@ -105,8 +104,7 @@ enum TokenType {
   TOKEN_LIT_BOOLEAN_TRUE,
   TOKEN_LIT_BOOLEAN_FALSE,
   TOKEN_LIT_CHARACTER,
-  TOKEN_LIT_STRING,
-  TOKEN_LIT_U_STRING
+  TOKEN_LIT_STRING
 };
 
 typedef struct Token Token;
