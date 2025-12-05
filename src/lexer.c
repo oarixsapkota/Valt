@@ -164,7 +164,6 @@ void free_tokens(Token *token) {
 }
 
 Token *lexer(const char *buffer) {
-  
   uint64 index = 0;
   uint64 line_num = 1;
   uint32 char_num = 1;
@@ -184,7 +183,7 @@ Token *lexer(const char *buffer) {
       line_num++;
       char_num = 1;
       index++;
-    
+
     } else if (iswspace(buffer[index]) && buffer[index] != '\n') {
       while (isspace(buffer[index]) && buffer[index] != '\n') {
         index++;
@@ -194,13 +193,10 @@ Token *lexer(const char *buffer) {
 
       _Bool is_float;
       char *digit = get_digit(buffer, &index, &char_num, line_num, &is_float);
-      TokenType type = (is_float == 1) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
-      if (is_float)
-        type = TOKEN_LIT_INT;
+      TokenType type = (is_float) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
       push_token(&token_tail, type, digit);
-    
-    } else if (isalpha(buffer[index]) || buffer[index] == '_') {
 
+    } else if (isalpha(buffer[index]) || buffer[index] == '_') {
       char *word = get_word(buffer, &index, &char_num);
       TokenType type = get_word_type(word);
       if (type != TOKEN_IDENTIFIER) {
@@ -216,17 +212,17 @@ Token *lexer(const char *buffer) {
           push_token(&token_tail, type, word);
         }
       }
-    
+
     } else if (buffer[index] == 39) { // 39 = ' for char literal
-    
+
       char *char_lit = get_char_lit(buffer, &index, &char_num, line_num);
       push_token(&token_tail, TOKEN_LIT_CHARACTER, char_lit);
-    
+
     } else if (buffer[index] == 34) { // 34 = " for string literal
-    
+
       char *str_lit = get_str_lit(buffer, &index, &char_num, line_num);
       push_token(&token_tail, TOKEN_LIT_STRING, str_lit);
-    
+
     } else {
       switch (buffer[index]) {
         case '/':

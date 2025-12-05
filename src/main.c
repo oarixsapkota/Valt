@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
   }
 
   char *buffer = read_file(argv[1]);
-  
+
   if (buffer == NULL) {
     fprintf(stderr, "FILE::ERROR\n");
     return 1;
