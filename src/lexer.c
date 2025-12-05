@@ -80,20 +80,17 @@ TokenType get_word_type(const char *word) {
   return TOKEN_IDENTIFIER;
 }
 
-char *get_digit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num, uint8 *is_float) {
+char *get_digit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num, _Bool *is_float) {
   const uint64 start = *index;
   *is_float = 0;
   while (isdigit(buffer[*index]) || buffer[*index] == '.') {
     if (buffer[*index] == '.') {
       if (!isdigit(buffer[*index + 1])) {
-        fprintf(stderr, "Incomplete Float literal at line %lld char %d.\n", line_num, *char_num);
-        return NULL;
+        fprintf(stderr, "Invalid symbol `.' at line %lld char %d\n", line_num, *char_num);
+        return allocate_sub_string(buffer, start, *index);
+        break;
       }
-      (*is_float)++;
-    }
-    if (*is_float >= 2) {
-      fprintf(stderr, "Invalid symbol `.' at line %lld char %d\n", line_num, *char_num);
-      return NULL;
+      *is_float = 1;
     }
     (*index)++;
     (*char_num)++;
@@ -188,12 +185,17 @@ Token *lexer(const char *buffer) {
       char_num = 1;
       index++;
     
-    } else if (isdigit(buffer[index]) || buffer[index] == '.') {
+    } else if (iswspace(buffer[index]) && buffer[index] != '\n') {
+      while (isspace(buffer[index]) && buffer[index] != '\n') {
+        index++;
+        char_num++;
+      }
+    } else if (isdigit(buffer[index])) {
 
-      uint8 is_float;
+      _Bool is_float;
       char *digit = get_digit(buffer, &index, &char_num, line_num, &is_float);
       TokenType type = (is_float == 1) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
-      if (is_float >= 3)
+      if (is_float)
         type = TOKEN_LIT_INT;
       push_token(&token_tail, type, digit);
     
@@ -418,8 +420,6 @@ Token *lexer(const char *buffer) {
 
         default:
           fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n", buffer[index], line_num, char_num);
-          while (isspace(buffer[index]))
-            index++;
           char_num++;
           index++;
           break;
