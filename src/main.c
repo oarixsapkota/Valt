@@ -30,9 +30,15 @@ void print_tokens(Token *token) {
   }
 }
 
-int main(void) {
-  char *file_name = "../test/tok.vt";
-  char *buffer = read_file(file_name);
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    fprintf(stderr, "Error : Incorrect usage.\n");
+    printf("Correct usage : Valt <filename.vt>\n");
+    exit(EXIT_FAILURE);
+  }
+
+  char *buffer = read_file(argv[1]);
+  
   if (buffer == NULL) {
     fprintf(stderr, "FILE::ERROR\n");
     return 1;
