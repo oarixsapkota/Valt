@@ -29,6 +29,7 @@ char *get_word(const char *buffer, uint64 *index, uint32 *char_num) {
   return allocate_sub_string(buffer, start, *index);
 }
 
+// TODO : use hash-map here.
 TokenType get_word_type(const char *word) {
   const Keyword keyword[] = {
       // Type
@@ -132,11 +133,13 @@ char *get_str_lit(const char *buffer, uint64 *index, uint32 *char_num, const uin
   return out;
 }
 
-void push_token(Token *token_head, Token **token_tail, const TokenType type, char *value) {
+/**
+ * Adds token to the toen list.
+ */
+void push_token(Token **token_tail, const TokenType type, char *value) {
   Token *new_token = malloc(sizeof(Token));
   if (!new_token) {
     fprintf(stderr, "Memory allocation failed.\n");
-    free(token_head);
     exit(EXIT_FAILURE);
   }
   new_token->type = type;
@@ -149,6 +152,9 @@ void push_token(Token *token_head, Token **token_tail, const TokenType type, cha
   *token_tail = new_token;
 }
 
+/**
+ * free tokens with allocated value.
+ */
 void free_tokens(Token *token) {
   while (token) {
     Token *next = token->next;
@@ -161,9 +167,11 @@ void free_tokens(Token *token) {
 }
 
 Token *lexer(const char *buffer) {
+  
   uint64 index = 0;
   uint64 line_num = 1;
   uint32 char_num = 1;
+
   Token *head = malloc(sizeof(Token));
   if (!head) {
     fprintf(stderr, "Memory allocation failed.\n");
@@ -175,54 +183,61 @@ Token *lexer(const char *buffer) {
 
   Token *token_tail = head;
   while (buffer[index] != '\0') {
-    if (buffer[index] == '\n') {
+    if (buffer[index] == '\n') { // Incrimen line number
       line_num++;
       char_num = 1;
       index++;
-    } else if (isspace(buffer[index])) {
-      index++;
-      char_num++;
-    } else if (isdigit(buffer[index]) || (buffer[index] == '.' && isdigit(buffer[index + 1]))) {
+    
+    } else if (isdigit(buffer[index]) || buffer[index] == '.') {
+
       uint8 is_float;
       char *digit = get_digit(buffer, &index, &char_num, line_num, &is_float);
       TokenType type = (is_float == 1) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
       if (is_float >= 3)
         type = TOKEN_LIT_INT;
-      push_token(head, &token_tail, type, digit);
+      push_token(&token_tail, type, digit);
+    
     } else if (isalpha(buffer[index]) || buffer[index] == '_') {
+
       char *word = get_word(buffer, &index, &char_num);
       TokenType type = get_word_type(word);
       if (type != TOKEN_IDENTIFIER) {
         free(word);
         word = NULL;
-        push_token(head, &token_tail, type, word);
+        push_token(&token_tail, type, word);
       } else {
         if (buffer[index] == ':') {
-          push_token(head, &token_tail, TOKEN_LABEL, word);
+          push_token(&token_tail, TOKEN_LABEL, word);
           index++;
           char_num++;
         } else {
-          push_token(head, &token_tail, type, word);
+          push_token(&token_tail, type, word);
         }
       }
+    
     } else if (buffer[index] == 39) { // 39 = ' for char literal
+    
       char *char_lit = get_char_lit(buffer, &index, &char_num, line_num);
-      push_token(head, &token_tail, TOKEN_LIT_CHARACTER, char_lit);
+      push_token(&token_tail, TOKEN_LIT_CHARACTER, char_lit);
+    
     } else if (buffer[index] == 34) { // 34 = " for string literal
+    
       char *str_lit = get_str_lit(buffer, &index, &char_num, line_num);
-      push_token(head, &token_tail, TOKEN_LIT_STRING, str_lit);
+      push_token(&token_tail, TOKEN_LIT_STRING, str_lit);
+    
     } else {
       switch (buffer[index]) {
         case '/':
           if (buffer[index + 1] == '/') {
+            // Skip line comments.
             while (buffer[index] != '\n')
               index++;
           } else if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_SLASH_EQ, NULL);
+            push_token(&token_tail, TOKEN_SLASH_EQ, NULL);
             index++;
             char_num++;
           } else {
-            push_token(head, &token_tail, TOKEN_SLASH, NULL);
+            push_token(&token_tail, TOKEN_SLASH, NULL);
             index++;
             char_num++;
           }
@@ -230,112 +245,112 @@ Token *lexer(const char *buffer) {
 
         case '=':
           if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_EQUAL, NULL);
+            push_token(&token_tail, TOKEN_EQUAL, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_ASSIGN, NULL);
+            push_token(&token_tail, TOKEN_ASSIGN, NULL);
           index++;
           char_num++;
           break;
         case '>':
           if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_GREATER_EQ, NULL);
+            push_token(&token_tail, TOKEN_GREATER_EQ, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_GREATER, NULL);
+            push_token(&token_tail, TOKEN_GREATER, NULL);
           index++;
           char_num++;
           break;
         case '<':
           if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_LESS_EQ, NULL);
+            push_token(&token_tail, TOKEN_LESS_EQ, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_LESS, NULL);
+            push_token(&token_tail, TOKEN_LESS, NULL);
           index++;
           char_num++;
           break;
 
         case '+':
           if (buffer[index + 1] == '+') {
-            push_token(head, &token_tail, TOKEN_2_PLUS, NULL);
+            push_token(&token_tail, TOKEN_2_PLUS, NULL);
             index++;
             char_num++;
           } else if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_PLUS_EQ, NULL);
+            push_token(&token_tail, TOKEN_PLUS_EQ, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_PLUS, NULL);
+            push_token(&token_tail, TOKEN_PLUS, NULL);
           index++;
           char_num++;
           break;
         case '-':
           if (buffer[index + 1] == '-') {
-            push_token(head, &token_tail, TOKEN_2_MINUS, NULL);
+            push_token(&token_tail, TOKEN_2_MINUS, NULL);
             index++;
             char_num++;
           } else if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_MINUS_EQ, NULL);
+            push_token(&token_tail, TOKEN_MINUS_EQ, NULL);
             index++;
             char_num++;
           } else if (buffer[index + 1] == '>') {
-            push_token(head, &token_tail, TOKEN_ARROW, NULL);
+            push_token(&token_tail, TOKEN_ARROW, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_MINUS, NULL);
+            push_token(&token_tail, TOKEN_MINUS, NULL);
           index++;
           char_num++;
           break;
         case '*':
           if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_STAR_EQ, NULL);
+            push_token(&token_tail, TOKEN_STAR_EQ, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_STAR, NULL);
+            push_token(&token_tail, TOKEN_STAR, NULL);
           index++;
           char_num++;
           break;
         case '%':
           if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_PERC_EQ, NULL);
+            push_token(&token_tail, TOKEN_PERC_EQ, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_PERCENT, NULL);
+            push_token(&token_tail, TOKEN_PERCENT, NULL);
           index++;
           char_num++;
           break;
 
         case '!':
           if (buffer[index + 1] == '=') {
-            push_token(head, &token_tail, TOKEN_NOT_EQ, NULL);
+            push_token(&token_tail, TOKEN_NOT_EQ, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_BANG, NULL);
+            push_token(&token_tail, TOKEN_BANG, NULL);
           index++;
           char_num++;
           break;
 
         case '&':
           if (buffer[index + 1] == '&') {
-            push_token(head, &token_tail, TOKEN_AND, NULL);
+            push_token(&token_tail, TOKEN_AND, NULL);
             index++;
             char_num++;
           } else
-            push_token(head, &token_tail, TOKEN_ADDRESS_OF, NULL);
+            push_token(&token_tail, TOKEN_ADDRESS_OF, NULL);
           index++;
           char_num++;
           break;
         case '|':
           if (buffer[index + 1] == '|') {
-            push_token(head, &token_tail, TOKEN_OR, NULL);
+            push_token(&token_tail, TOKEN_OR, NULL);
             index++;
             char_num++;
           } else
@@ -345,58 +360,58 @@ Token *lexer(const char *buffer) {
           break;
 
         case '.':
-          push_token(head, &token_tail, TOKEN_DOT, NULL);
+          push_token(&token_tail, TOKEN_DOT, NULL);
           index++;
           char_num++;
           break;
 
         case '(':
-          push_token(head, &token_tail, TOKEN_O_PREN, NULL);
+          push_token(&token_tail, TOKEN_O_PREN, NULL);
           index++;
           char_num++;
           break;
         case ')':
-          push_token(head, &token_tail, TOKEN_C_PREN, NULL);
+          push_token(&token_tail, TOKEN_C_PREN, NULL);
           index++;
           char_num++;
           break;
         case '[':
-          push_token(head, &token_tail, TOKEN_O_BRACKET, NULL);
+          push_token(&token_tail, TOKEN_O_BRACKET, NULL);
           index++;
           char_num++;
           break;
         case ']':
-          push_token(head, &token_tail, TOKEN_C_BRACKET, NULL);
+          push_token(&token_tail, TOKEN_C_BRACKET, NULL);
           index++;
           char_num++;
           break;
         case '{':
-          push_token(head, &token_tail, TOKEN_O_BRACE, NULL);
+          push_token(&token_tail, TOKEN_O_BRACE, NULL);
           index++;
           char_num++;
           break;
         case '}':
-          push_token(head, &token_tail, TOKEN_C_BRACE, NULL);
+          push_token(&token_tail, TOKEN_C_BRACE, NULL);
           index++;
           char_num++;
           break;
         case ':':
-          push_token(head, &token_tail, TOKEN_COLN, NULL);
+          push_token(&token_tail, TOKEN_COLN, NULL);
           index++;
           char_num++;
           break;
         case ';':
-          push_token(head, &token_tail, TOKEN_SEMI_COLN, NULL);
+          push_token(&token_tail, TOKEN_SEMI_COLN, NULL);
           index++;
           char_num++;
           break;
         case '?':
-          push_token(head, &token_tail, TOKEN_QUESTION, NULL);
+          push_token(&token_tail, TOKEN_QUESTION, NULL);
           index++;
           char_num++;
           break;
         case ',':
-          push_token(head, &token_tail, TOKEN_COMMA, NULL);
+          push_token(&token_tail, TOKEN_COMMA, NULL);
           index++;
           char_num++;
           break;
@@ -411,6 +426,6 @@ Token *lexer(const char *buffer) {
       }
     }
   }
-  push_token(head, &token_tail, TOKEN_END, NULL);
+  push_token(&token_tail, TOKEN_END, NULL);
   return head;
 }
