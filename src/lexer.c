@@ -190,7 +190,6 @@ Token *lexer(const char *buffer) {
         char_num++;
       }
     } else if (isdigit(buffer[index])) {
-
       _Bool is_float;
       char *digit = get_digit(buffer, &index, &char_num, line_num, &is_float);
       TokenType type = (is_float) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;

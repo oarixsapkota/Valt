@@ -9,6 +9,8 @@ add_executable(Valt
         src/inc/lexer.h
         src/inc/valt.h
         src/inc/utils.h
+        src/inc/ast.h
+        src/ast.c
         src/utils.c
         src/lexer.c
 )
