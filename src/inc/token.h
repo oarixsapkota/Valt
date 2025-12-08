@@ -1,15 +1,14 @@
 #ifndef VALT_TOKEN_H
 #define VALT_TOKEN_H
 
-typedef enum TokenType TokenType;
-enum TokenType {
-  // LEXER HELPER TOKENS
-  TOKEN_START,
-  TOKEN_END,
+#include "valt.h"
 
+typedef enum {
+  // LEXER HELPER TOKENS
+  TOKEN_START = 0,
+  
   // TOKEN ID
   TOKEN_IDENTIFIER,
-  TOKEN_LABEL,
 
   // TOKEN Keywords
   // functions
@@ -101,17 +100,39 @@ enum TokenType {
   // TOKEN Literal
   TOKEN_LIT_INT,
   TOKEN_LIT_FLOAT,
+  TOKEN_LIT_CHARACTER,
+  TOKEN_LIT_STRING,
   TOKEN_LIT_BOOLEAN_TRUE,
   TOKEN_LIT_BOOLEAN_FALSE,
-  TOKEN_LIT_CHARACTER,
-  TOKEN_LIT_STRING
-};
+  
+  // Ending TOKEN
+  TOKEN_END
+} TokenType;
+
+typedef struct {
+  uint64 line;
+  uint64 col;
+} Pos;
 
 typedef struct Token Token;
 struct Token {
   TokenType type;
   char *value;
+  Pos pos;
   Token *next;
 };
+
+typedef struct {
+  char *word;
+  TokenType type;
+} Keyword;
+
+const char *token_type_to_str(TokenType type);
+TokenType str_to_token_type(const char *word);
+
+void print_tokens(Token *tokens);
+
+void add_token(Token **tail, Token token);
+void free_s_token(Token *head);
 
 #endif // VALT_TOKEN_H

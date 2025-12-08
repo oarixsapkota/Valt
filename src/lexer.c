@@ -1,426 +1,167 @@
 #include "inc/lexer.h"
 
-#include "inc/token.h"
-#include "inc/valt.h"
+#include "inc/utils.h"
 
 #include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-char *allocate_sub_string(const char *buffer, const uint64 start, const uint64 end) {
-  const uint64 word_size = end - start;
-  char *out = malloc(word_size + 1);
-  if (!out) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    return NULL;
-  }
-  memcpy(out, buffer + start, word_size);
+Lexer init_lexer(const char *buffer) {
+  Lexer lexer;
+
+  lexer.buffer = buffer;
+  lexer.index = 0;
+  lexer.line = 1;
+  lexer.col = 0;
+
+  return lexer;
+}
+
+char lexer_eat(Lexer *self) {
+  char c = self->buffer[self->index];
+  (self->index)++;
+  (self->col)++;
+  return c;
+}
+
+char lexer_peek(Lexer *self, int32 offset) {
+  return self->buffer[self->index + offset];
+}
+
+char *allocate_sub_string(Lexer *self, const uint64 start) {
+  const uint64 word_size = self->index - start;
+  char *out = malloc_s(word_size + 1);
+  memcpy(out, self->buffer + start, word_size);
   out[word_size] = '\0';
   return out;
 }
 
-char *get_word(const char *buffer, uint64 *index, uint32 *char_num) {
-  const uint64 start = *index;
-  while (isalnum(buffer[*index]) || buffer[*index] == '_') {
-    (*index)++;
-    (*char_num)++;
+Token get_word(Lexer *self) {
+  uint64 start = self->index;
+  while (isalnum(lexer_peek(self, 0)) || lexer_peek(self, 0) == '_')
+    lexer_eat(self);
+
+  char *value = allocate_sub_string(self, start);
+
+  Token token;
+  token = (Token){.pos.line = self->line, .pos.col = self->col};
+  token.next = NULL;
+
+  TokenType type = str_to_token_type(value);
+  token.type = type;
+
+  if (type != TOKEN_IDENTIFIER) {
+    free_s(value);
+    token.value = NULL;
+  } else {
+    token.value = value;
   }
-  return allocate_sub_string(buffer, start, *index);
+  return token;
 }
 
-// TODO : use hash-map here.
-TokenType get_word_type(const char *word) {
-  const Keyword keyword[] = {
-      // Type
-      {"void", TOKEN_VOID},         // void
-      {"char", TOKEN_CHAR},         // unsigned int
-      {"bool", TOKEN_BOOL},         // unsigned int
-      {"int", TOKEN_INT},           // int
-      {"int8", TOKEN_INT8},         // int
-      {"int16", TOKEN_INT16},       // int
-      {"int32", TOKEN_INT32},       // int
-      {"int64", TOKEN_INT64},       // int
-      {"uint8", TOKEN_UINT8},       // unsigned int
-      {"uint16", TOKEN_UINT16},     // unsigned int
-      {"uint32", TOKEN_UINT32},     // unsigned int
-      {"uint64", TOKEN_UINT64},     // unsigned int
-      {"float", TOKEN_FLOAT},       // float
-      {"float32", TOKEN_FLOAT32},   // float
-      {"float64", TOKEN_FLOAT64},   // float
-      {"float128", TOKEN_FLOAT128}, // float
-      {"string", TOKEN_STRING},     // string
-      {"array", TOKEN_ARRAY},       // array
-      {"object", TOKEN_OBJECT},     // object
-      // Function
-      {"func", TOKEN_FUNC},     // function
-      {"return", TOKEN_RETURN}, // return
-      {"pass", TOKEN_PASS},     // pass
-      // Branching
-      {"if", TOKEN_IF},     // if stmt
-      {"elif", TOKEN_ELIF}, // else_if-clause
-      {"else", TOKEN_ELSE}, // else-clause
-      // Looping
-      {"do", TOKEN_DO},       // do
-      {"while", TOKEN_WHILE}, // while
-      {"for", TOKEN_FOR},     // for
-      {"guard", TOKEN_GUARD}, // guard
-      // Looping Control
-      {"break", TOKEN_BREAK},       // break loop
-      {"continue", TOKEN_CONTINUE}, // continue from top
-      // Boolean Literal
-      {"true", TOKEN_LIT_BOOLEAN_TRUE},  // true ( 1 )
-      {"false", TOKEN_LIT_BOOLEAN_FALSE} // false ( 2 )
-  }; // KYE-PARE
-  const uint64 n_keywords = sizeof(keyword) / sizeof(Keyword);
-  for (uint64 i = 0; i < n_keywords; ++i) {
-    if (strcmp(word, keyword[i].word) == 0)
-      return keyword[i].type;
-  }
-  return TOKEN_IDENTIFIER;
-}
-
-char *get_digit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num, _Bool *is_float) {
-  const uint64 start = *index;
-  *is_float = 0;
-  while (isdigit(buffer[*index]) || buffer[*index] == '.') {
-    if (buffer[*index] == '.') {
-      if (!isdigit(buffer[*index + 1])) {
-        fprintf(stderr, "Invalid symbol `.' at line %lld char %d\n", line_num, *char_num);
-        return allocate_sub_string(buffer, start, *index);
+Token get_digit(Lexer *self) {
+  uint64 start = self->index;
+  bool isfloat = false;
+  while (isdigit(lexer_peek(self, 0)) || lexer_peek(self, 0) == '.') {
+    if (lexer_peek(self, 0) == '.') {
+      if (!isdigit(lexer_peek(self, 1))) {
+        char *value = allocate_sub_string(self, start);
+        TokenType type = (isfloat) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
+        Token token = (Token){.type = type, .value = value, .next = NULL, .pos.line = self->line, .pos.col = self->col};
         break;
       }
-      *is_float = 1;
+      isfloat = true;
     }
-    (*index)++;
-    (*char_num)++;
+    lexer_eat(self);
   }
-  return allocate_sub_string(buffer, start, *index);
+
+  char *value = allocate_sub_string(self, start);
+
+  TokenType type = (isfloat) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
+  Token token = (Token){.type = type, .value = value, .next = NULL, .pos.line = self->line, .pos.col = self->col};
+
+  return token;
 }
 
-char *get_char_lit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num) {
-  (*index)++;
-  const uint64 start = *index;
-  while (buffer[*index] != '\'' && buffer[*index] != '\0' && buffer[*index] != '\n') {
-    (*index)++;
-    (*char_num)++;
-  }
-  if (buffer[*index] == '\0' || buffer[*index] == '\n') {
-    fprintf(stderr, "Unterminated character literal at line %lld char %d.\n", line_num, *char_num);
-    return NULL;
-  }
-  char *out = allocate_sub_string(buffer, start, *index);
-  (*index)++;
-  return out;
+Token get_char_lit(Lexer *self) {
+  lexer_eat(self);
+  uint64 start = self->index;
+  while (lexer_peek(self, 0) != '\'' && lexer_peek(self, 0) != '\0' && lexer_peek(self, 0) != '\n')
+    lexer_eat(self);
+
+  char *value = allocate_sub_string(self, start);
+
+  Token token = (Token){.type = TOKEN_LIT_CHARACTER, .value = value, .next = NULL, .pos.line = self->line, .pos.col = self->col};
+
+  lexer_eat(self);
+
+  return token;
 }
 
-char *get_str_lit(const char *buffer, uint64 *index, uint32 *char_num, const uint64 line_num) {
-  (*index)++;
-  const uint64 start = *index;
-  while (buffer[*index] != '"' && buffer[*index] != '\0' && buffer[*index] != '\n') {
-    (*index)++;
-    (*char_num)++;
-  }
-  if (buffer[*index] == '\0' || buffer[*index] == '\n') {
-    fprintf(stderr, "Unterminated String literal at line %lld char %d.\n", line_num, *char_num);
-    return NULL;
-  }
-  char *out = allocate_sub_string(buffer, start, *index);
-  (*index)++;
-  return out;
+Token get_string_lit(Lexer *self) {
+  lexer_eat(self);
+  uint64 start = self->index;
+  while (lexer_peek(self, 0) != '\"' && lexer_peek(self, 0) != '\0' && lexer_peek(self, 0) != '\n')
+    lexer_eat(self);
+
+  char *value = allocate_sub_string(self, start);
+
+  Token token = (Token){.type = TOKEN_LIT_STRING, .value = value, .next = NULL, .pos.line = self->line, .pos.col = self->col};
+
+  lexer_eat(self);
+
+  return token;
 }
 
 /**
- * Adds token to the toen list.
+ * Lexer entry function.
  */
-void push_token(Token **token_tail, const TokenType type, char *value) {
-  Token *new_token = malloc(sizeof(Token));
-  if (!new_token) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    exit(EXIT_FAILURE);
-  }
-  new_token->type = type;
-  new_token->value = value;
-  new_token->next = NULL;
-
-  if (*token_tail) {
-    (*token_tail)->next = new_token;
-  }
-  *token_tail = new_token;
-}
-
-/**
- * free tokens with allocated value.
- */
-void free_tokens(Token *token) {
-  while (token) {
-    Token *next = token->next;
-    if (token->value != NULL) {
-      free(token->value);
-    }
-    free(token);
-    token = next;
-  }
-}
-
 Token *lexer(const char *buffer) {
-  uint64 index = 0;
-  uint64 line_num = 1;
-  uint32 char_num = 1;
-
-  Token *head = malloc(sizeof(Token));
-  if (!head) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    exit(EXIT_FAILURE);
-  }
+  Token *head = malloc_s(sizeof(Token));
   head->type = TOKEN_START;
   head->value = NULL;
   head->next = NULL;
+  Token *tail = head;
 
-  Token *token_tail = head;
-  while (buffer[index] != '\0') {
-    if (buffer[index] == '\n') { // Incrimen line number
-      line_num++;
-      char_num = 1;
-      index++;
-
-    } else if (iswspace(buffer[index]) && buffer[index] != '\n') {
-      while (isspace(buffer[index]) && buffer[index] != '\n') {
-        index++;
-        char_num++;
-      }
-    } else if (isdigit(buffer[index])) {
-      _Bool is_float;
-      char *digit = get_digit(buffer, &index, &char_num, line_num, &is_float);
-      TokenType type = (is_float) ? TOKEN_LIT_FLOAT : TOKEN_LIT_INT;
-      push_token(&token_tail, type, digit);
-
-    } else if (isalpha(buffer[index]) || buffer[index] == '_') {
-      char *word = get_word(buffer, &index, &char_num);
-      TokenType type = get_word_type(word);
-      if (type != TOKEN_IDENTIFIER) {
-        free(word);
-        word = NULL;
-        push_token(&token_tail, type, word);
-      } else {
-        if (buffer[index] == ':') {
-          push_token(&token_tail, TOKEN_LABEL, word);
-          index++;
-          char_num++;
-        } else {
-          push_token(&token_tail, type, word);
-        }
-      }
-
-    } else if (buffer[index] == 39) { // 39 = ' for char literal
-
-      char *char_lit = get_char_lit(buffer, &index, &char_num, line_num);
-      push_token(&token_tail, TOKEN_LIT_CHARACTER, char_lit);
-
-    } else if (buffer[index] == 34) { // 34 = " for string literal
-
-      char *str_lit = get_str_lit(buffer, &index, &char_num, line_num);
-      push_token(&token_tail, TOKEN_LIT_STRING, str_lit);
-
+  Lexer lexer = init_lexer(buffer);
+  while (lexer_peek(&lexer, 0) != '\0') {
+    // Line && col counting
+    if (lexer_peek(&lexer, 0) == '\n') {
+      (lexer.line)++;
+      (lexer.col) = 0;
+    } else if (isalpha(lexer_peek(&lexer, 0)) || lexer_peek(&lexer, 0) == '_') {
+      add_token(&tail, get_word(&lexer));
+    } else if (isdigit(lexer_peek(&lexer, 0)) || (lexer_peek(&lexer, 0) == '.' && isdigit(lexer_peek(&lexer, 1)))) {
+      add_token(&tail, get_digit(&lexer));
     } else {
-      switch (buffer[index]) {
+      switch (lexer_peek(&lexer, 0)) {
         case '/':
-          if (buffer[index + 1] == '/') {
-            // Skip line comments.
-            while (buffer[index] != '\n')
-              index++;
-          } else if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_SLASH_EQ, NULL);
-            index++;
-            char_num++;
+          if (lexer_peek(&lexer, 1) == '/') {
+            // Skip line-comments
+            while (lexer_peek(&lexer, 1) != '\n')
+              lexer_eat(&lexer);
+          } else if (lexer_peek(&lexer, 1) == '*') {
+            // Skip Block-comments
+            while (!(lexer_peek(&lexer, -1) == '*' && lexer_peek(&lexer, 0) == '/'))
+              lexer_eat(&lexer);
           } else {
-            push_token(&token_tail, TOKEN_SLASH, NULL);
-            index++;
-            char_num++;
+            add_token(&tail, (Token){.type = TOKEN_SLASH, .value = NULL, .pos.line = lexer.line, .pos.col = lexer.col, .next = NULL});
           }
           break;
-
-        case '=':
-          if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_EQUAL, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_ASSIGN, NULL);
-          index++;
-          char_num++;
+        case '\'': // Lex Char literals
+          add_token(&tail, get_char_lit(&lexer));
           break;
-        case '>':
-          if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_GREATER_EQ, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_GREATER, NULL);
-          index++;
-          char_num++;
+        case '\"': // Lex String Literals
+          add_token(&tail, get_string_lit(&lexer));
           break;
-        case '<':
-          if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_LESS_EQ, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_LESS, NULL);
-          index++;
-          char_num++;
-          break;
-
-        case '+':
-          if (buffer[index + 1] == '+') {
-            push_token(&token_tail, TOKEN_2_PLUS, NULL);
-            index++;
-            char_num++;
-          } else if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_PLUS_EQ, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_PLUS, NULL);
-          index++;
-          char_num++;
-          break;
-        case '-':
-          if (buffer[index + 1] == '-') {
-            push_token(&token_tail, TOKEN_2_MINUS, NULL);
-            index++;
-            char_num++;
-          } else if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_MINUS_EQ, NULL);
-            index++;
-            char_num++;
-          } else if (buffer[index + 1] == '>') {
-            push_token(&token_tail, TOKEN_ARROW, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_MINUS, NULL);
-          index++;
-          char_num++;
-          break;
-        case '*':
-          if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_STAR_EQ, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_STAR, NULL);
-          index++;
-          char_num++;
-          break;
-        case '%':
-          if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_PERC_EQ, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_PERCENT, NULL);
-          index++;
-          char_num++;
-          break;
-
-        case '!':
-          if (buffer[index + 1] == '=') {
-            push_token(&token_tail, TOKEN_NOT_EQ, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_BANG, NULL);
-          index++;
-          char_num++;
-          break;
-
-        case '&':
-          if (buffer[index + 1] == '&') {
-            push_token(&token_tail, TOKEN_AND, NULL);
-            index++;
-            char_num++;
-          } else
-            push_token(&token_tail, TOKEN_ADDRESS_OF, NULL);
-          index++;
-          char_num++;
-          break;
-        case '|':
-          if (buffer[index + 1] == '|') {
-            push_token(&token_tail, TOKEN_OR, NULL);
-            index++;
-            char_num++;
-          } else
-            fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n", buffer[index], line_num, char_num);
-          index++;
-          char_num++;
-          break;
-
-        case '.':
-          push_token(&token_tail, TOKEN_DOT, NULL);
-          index++;
-          char_num++;
-          break;
-
-        case '(':
-          push_token(&token_tail, TOKEN_O_PREN, NULL);
-          index++;
-          char_num++;
-          break;
-        case ')':
-          push_token(&token_tail, TOKEN_C_PREN, NULL);
-          index++;
-          char_num++;
-          break;
-        case '[':
-          push_token(&token_tail, TOKEN_O_BRACKET, NULL);
-          index++;
-          char_num++;
-          break;
-        case ']':
-          push_token(&token_tail, TOKEN_C_BRACKET, NULL);
-          index++;
-          char_num++;
-          break;
-        case '{':
-          push_token(&token_tail, TOKEN_O_BRACE, NULL);
-          index++;
-          char_num++;
-          break;
-        case '}':
-          push_token(&token_tail, TOKEN_C_BRACE, NULL);
-          index++;
-          char_num++;
-          break;
-        case ':':
-          push_token(&token_tail, TOKEN_COLN, NULL);
-          index++;
-          char_num++;
-          break;
-        case ';':
-          push_token(&token_tail, TOKEN_SEMI_COLN, NULL);
-          index++;
-          char_num++;
-          break;
-        case '?':
-          push_token(&token_tail, TOKEN_QUESTION, NULL);
-          index++;
-          char_num++;
-          break;
-        case ',':
-          push_token(&token_tail, TOKEN_COMMA, NULL);
-          index++;
-          char_num++;
-          break;
-
         default:
-          fprintf(stderr, "Invalid symbol `%c' at line %lld char %d\n", buffer[index], line_num, char_num);
-          char_num++;
-          index++;
+          if (!isspace(lexer_peek(&lexer, 0)))
+            cprintf(MSG_WARN, "unexpected symbol `%c' at line %llu col %llu\n", lexer_peek(&lexer, 0), lexer.line, lexer.col);
           break;
       }
     }
+    lexer_eat(&lexer);
   }
-  push_token(&token_tail, TOKEN_END, NULL);
+  add_token(&tail, (Token){.type = TOKEN_END, .value = NULL, .pos.col = 0, .pos.line = 0});
+  print_tokens(head);
   return head;
 }

@@ -1,12 +1,17 @@
+// Line comment
+/*
+Block comment
+*/
+
 // ID
 _identifier
-_label:
 
 // Literals
 "string"
 'A'
 1234
 1.234
+.34
 true
 false
 
@@ -51,7 +56,6 @@ uint64 // 8 byte
 // Misc
 object // size of all members combined
 array  // 9 byte ( uint8 type && uint32 ptr && uint32 length )
-
 
 // punctuations
 ({[]});:,?
