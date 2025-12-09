@@ -157,7 +157,7 @@ void print_tokens(Token *tokens) {
     Token *next = tokens->next;
     switch (tokens->type) {
       case TOKEN_IDENTIFIER:
-        cprintf(MSG_YELLOW, "%s\t: %s\n", token_type_to_str(tokens->type), tokens->value);
+        cprintf(MSG, "%s\t: %s\n", token_type_to_str(tokens->type), tokens->value);
         break;
       case TOKEN_LIT_CHARACTER:
         cprintf(MSG_GREEN, "%s\t: \'%s\'\n", token_type_to_str(tokens->type), tokens->value);
@@ -173,8 +173,81 @@ void print_tokens(Token *tokens) {
       case TOKEN_END:
         cprintf(MSG_RED, "%s%s\n", STYLE_BOLD, token_type_to_str(tokens->type));
         break;
-      default:
+      case TOKEN_FUNC:
+      case TOKEN_RETURN:
+      case TOKEN_PASS:
+      case TOKEN_IF:
+      case TOKEN_ELIF:
+      case TOKEN_ELSE:
+      case TOKEN_DO:
+      case TOKEN_WHILE:
+      case TOKEN_FOR:
+      case TOKEN_GUARD:
+      case TOKEN_BREAK:
+      case TOKEN_CONTINUE:
+      case TOKEN_VOID:
+      case TOKEN_CHAR:
+      case TOKEN_BOOL:
+      case TOKEN_INT:
+      case TOKEN_FLOAT:
+      case TOKEN_STRING:
+      case TOKEN_FLOAT32:
+      case TOKEN_FLOAT64:
+      case TOKEN_FLOAT128:
+      case TOKEN_INT8:
+      case TOKEN_INT16:
+      case TOKEN_INT32:
+      case TOKEN_INT64:
+      case TOKEN_UINT8:
+      case TOKEN_UINT16:
+      case TOKEN_UINT32:
+      case TOKEN_UINT64:
+      case TOKEN_OBJECT:
+      case TOKEN_ARRAY:
+        cprintf(MSG_RED, "%s\n", token_type_to_str(tokens->type));
+        break;
+      case TOKEN_O_PREN:
+      case TOKEN_O_BRACE:
+      case TOKEN_O_BRACKET:
+      case TOKEN_C_BRACE:
+      case TOKEN_C_BRACKET:
+      case TOKEN_C_PREN:
+      case TOKEN_SEMI_COLN:
+      case TOKEN_COLN:
+      case TOKEN_COMMA:
+      case TOKEN_QUESTION:
+      case TOKEN_ASSIGN:
+      case TOKEN_PLUS_EQ:
+      case TOKEN_MINUS_EQ:
+      case TOKEN_STAR_EQ:
+      case TOKEN_SLASH_EQ:
+      case TOKEN_PERC_EQ:
+      case TOKEN_2_PLUS:
+      case TOKEN_2_MINUS:
+      case TOKEN_BANG:
+      case TOKEN_MINUS:
+      case TOKEN_PLUS:
+      case TOKEN_STAR:
+      case TOKEN_SLASH:
+      case TOKEN_PERCENT:
+      case TOKEN_EQUAL:
+      case TOKEN_NOT_EQ:
+      case TOKEN_GREATER:
+      case TOKEN_LESS:
+      case TOKEN_GREATER_EQ:
+      case TOKEN_LESS_EQ:
+      case TOKEN_AND:
+      case TOKEN_OR:
+      case TOKEN_ARROW:
+      case TOKEN_DOT:
         cprintf(MSG_YELLOW, "%s\n", token_type_to_str(tokens->type));
+        break;
+      case TOKEN_LIT_BOOLEAN_TRUE:
+      case TOKEN_LIT_BOOLEAN_FALSE:
+        cprintf(MSG_BLUE, "%s\n", token_type_to_str(tokens->type));
+        break;
+      default:
+        cprintf(MSG_ERROR, "%s\n", token_type_to_str(tokens->type));
         break;
     }
     tokens = next;

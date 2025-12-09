@@ -124,16 +124,32 @@ Token *lexer(const char *buffer) {
 
   Lexer lexer = init_lexer(buffer);
   while (lexer_peek(&lexer, 0) != '\0') {
+    Token current_t;
+    current_t = (Token){
+        .type = TOKEN_END,
+        .value = NULL,
+        .pos.line = lexer.line,
+        .pos.col = lexer.col,
+        .next = NULL,
+    };
     // Line && col counting
     if (lexer_peek(&lexer, 0) == '\n') {
       (lexer.line)++;
       (lexer.col) = 0;
     } else if (isalpha(lexer_peek(&lexer, 0)) || lexer_peek(&lexer, 0) == '_') {
-      add_token(&tail, get_word(&lexer));
+      current_t = get_word(&lexer);
     } else if (isdigit(lexer_peek(&lexer, 0)) || (lexer_peek(&lexer, 0) == '.' && isdigit(lexer_peek(&lexer, 1)))) {
-      add_token(&tail, get_digit(&lexer));
+      current_t = get_digit(&lexer);
     } else {
       switch (lexer_peek(&lexer, 0)) {
+        case '\'': // Lex Char literals
+          add_token(&tail, get_char_lit(&lexer));
+          break;
+
+        case '\"': // Lex String Literals
+          add_token(&tail, get_string_lit(&lexer));
+          break;
+
         case '/':
           if (lexer_peek(&lexer, 1) == '/') {
             // Skip line-comments
@@ -141,17 +157,150 @@ Token *lexer(const char *buffer) {
               lexer_eat(&lexer);
           } else if (lexer_peek(&lexer, 1) == '*') {
             // Skip Block-comments
-            while (!(lexer_peek(&lexer, -1) == '*' && lexer_peek(&lexer, 0) == '/'))
+            while (!(lexer_peek(&lexer, -1) == '*' && lexer_peek(&lexer, 0) == '/')) {
               lexer_eat(&lexer);
+              if (lexer_peek(&lexer, 0) == '\n') {
+                (lexer.line)++;
+                (lexer.col) = 0;
+              }
+            }
+          } else if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_SLASH_EQ;
+            lexer_eat(&lexer);
           } else {
-            add_token(&tail, (Token){.type = TOKEN_SLASH, .value = NULL, .pos.line = lexer.line, .pos.col = lexer.col, .next = NULL});
+            current_t.type = TOKEN_SLASH;
           }
           break;
-        case '\'': // Lex Char literals
-          add_token(&tail, get_char_lit(&lexer));
+
+        case '%':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_PERC_EQ;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_PERCENT;
+          }
           break;
-        case '\"': // Lex String Literals
-          add_token(&tail, get_string_lit(&lexer));
+
+        case '*':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_STAR_EQ;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_STAR;
+          }
+          break;
+
+        case '+':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_PLUS_EQ;
+            lexer_eat(&lexer);
+          } else if (lexer_peek(&lexer, 1) == '+') {
+            current_t.type = TOKEN_2_PLUS;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_PLUS;
+          }
+          break;
+
+        case '-':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_MINUS_EQ;
+            lexer_eat(&lexer);
+          } else if (lexer_peek(&lexer, 1) == '-') {
+            current_t.type = TOKEN_2_MINUS;
+            lexer_eat(&lexer);
+          } else if (lexer_peek(&lexer, 1) == '>') {
+            current_t.type = TOKEN_ARROW;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_MINUS;
+          }
+          break;
+
+        case '=':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_EQUAL;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_ASSIGN;
+          }
+          break;
+
+        case '>':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_GREATER_EQ;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_GREATER;
+          }
+          break;
+
+        case '<':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_LESS_EQ;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_LESS;
+          }
+          break;
+
+        case '!':
+          if (lexer_peek(&lexer, 1) == '=') {
+            current_t.type = TOKEN_NOT_EQ;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_BANG;
+          }
+          break;
+
+        case '&':
+          if (lexer_peek(&lexer, 1) == '&') {
+            current_t.type = TOKEN_AND;
+            lexer_eat(&lexer);
+          } else {
+            current_t.type = TOKEN_ADDRESS_OF;
+          }
+          break;
+
+        case '|':
+          if (lexer_peek(&lexer, 1) == '|') {
+            current_t.type = TOKEN_OR;
+            lexer_eat(&lexer);
+          }
+          break;
+
+        case '.':
+          current_t.type = TOKEN_DOT;
+          break;
+        case '(':
+          current_t.type = TOKEN_O_PREN;
+          break;
+        case ')':
+          current_t.type = TOKEN_C_PREN;
+          break;
+        case '{':
+          current_t.type = TOKEN_O_BRACE;
+          break;
+        case '}':
+          current_t.type = TOKEN_C_BRACE;
+          break;
+        case '[':
+          current_t.type = TOKEN_O_BRACKET;
+          break;
+        case ']':
+          current_t.type = TOKEN_C_BRACKET;
+          break;
+        case ';':
+          current_t.type = TOKEN_SEMI_COLN;
+          break;
+        case ':':
+          current_t.type = TOKEN_COLN;
+          break;
+        case ',':
+          current_t.type = TOKEN_COMMA;
+          break;
+        case '?':
+          current_t.type = TOKEN_QUESTION;
           break;
         default:
           if (!isspace(lexer_peek(&lexer, 0)))
@@ -159,9 +308,19 @@ Token *lexer(const char *buffer) {
           break;
       }
     }
+    if (current_t.type != TOKEN_END) {
+      add_token(&tail, current_t);
+    }
     lexer_eat(&lexer);
   }
-  add_token(&tail, (Token){.type = TOKEN_END, .value = NULL, .pos.col = 0, .pos.line = 0});
+  add_token(&tail,
+      (Token){
+          .type = TOKEN_END,
+          .value = NULL,
+          .pos.col = 0,
+          .pos.line = 0,
+          .next = NULL,
+      });
   print_tokens(head);
   return head;
 }
