@@ -124,6 +124,8 @@ Token *lexer(const char *buffer) {
 
   Lexer lexer = init_lexer(buffer);
   while (lexer_peek(&lexer, 0) != '\0') {
+    char current_c = lexer.buffer[lexer.index];
+    char next_c = lexer.buffer[lexer.index + 1];
     Token current_t;
     current_t = (Token){
         .type = TOKEN_END,
@@ -133,15 +135,15 @@ Token *lexer(const char *buffer) {
         .next = NULL,
     };
     // Line && col counting
-    if (lexer_peek(&lexer, 0) == '\n') {
+    if (current_c == '\n') {
       (lexer.line)++;
       (lexer.col) = 0;
-    } else if (isalpha(lexer_peek(&lexer, 0)) || lexer_peek(&lexer, 0) == '_') {
+    } else if (isalpha(current_c) || current_c == '_') {
       current_t = get_word(&lexer);
-    } else if (isdigit(lexer_peek(&lexer, 0)) || (lexer_peek(&lexer, 0) == '.' && isdigit(lexer_peek(&lexer, 1)))) {
+    } else if (isdigit(current_c) || (current_c == '.' && isdigit(next_c))) {
       current_t = get_digit(&lexer);
     } else {
-      switch (lexer_peek(&lexer, 0)) {
+      switch (current_c) {
         case '\'': // Lex Char literals
           add_token(&tail, get_char_lit(&lexer));
           break;
@@ -151,20 +153,23 @@ Token *lexer(const char *buffer) {
           break;
 
         case '/':
-          if (lexer_peek(&lexer, 1) == '/') {
+          if (next_c == '/') {
             // Skip line-comments
-            while (lexer_peek(&lexer, 1) != '\n')
+            while (next_c != '\n') {
               lexer_eat(&lexer);
-          } else if (lexer_peek(&lexer, 1) == '*') {
+              next_c = lexer.buffer[lexer.index + 1];
+            }
+          } else if (next_c == '*') {
             // Skip Block-comments
-            while (!(lexer_peek(&lexer, -1) == '*' && lexer_peek(&lexer, 0) == '/')) {
+            while (!(lexer_peek(&lexer, -1) == '*' && current_c == '/')) {
               lexer_eat(&lexer);
-              if (lexer_peek(&lexer, 0) == '\n') {
+              current_c = lexer.buffer[lexer.index];
+              if (current_c == '\n') {
                 (lexer.line)++;
                 (lexer.col) = 0;
               }
             }
-          } else if (lexer_peek(&lexer, 1) == '=') {
+          } else if (next_c == '=') {
             current_t.type = TOKEN_SLASH_EQ;
             lexer_eat(&lexer);
           } else {
@@ -173,7 +178,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '%':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_PERC_EQ;
             lexer_eat(&lexer);
           } else {
@@ -182,7 +187,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '*':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_STAR_EQ;
             lexer_eat(&lexer);
           } else {
@@ -191,10 +196,10 @@ Token *lexer(const char *buffer) {
           break;
 
         case '+':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_PLUS_EQ;
             lexer_eat(&lexer);
-          } else if (lexer_peek(&lexer, 1) == '+') {
+          } else if (next_c == '+') {
             current_t.type = TOKEN_2_PLUS;
             lexer_eat(&lexer);
           } else {
@@ -203,13 +208,13 @@ Token *lexer(const char *buffer) {
           break;
 
         case '-':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_MINUS_EQ;
             lexer_eat(&lexer);
-          } else if (lexer_peek(&lexer, 1) == '-') {
+          } else if (next_c == '-') {
             current_t.type = TOKEN_2_MINUS;
             lexer_eat(&lexer);
-          } else if (lexer_peek(&lexer, 1) == '>') {
+          } else if (next_c == '>') {
             current_t.type = TOKEN_ARROW;
             lexer_eat(&lexer);
           } else {
@@ -218,7 +223,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '=':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_EQUAL;
             lexer_eat(&lexer);
           } else {
@@ -227,7 +232,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '>':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_GREATER_EQ;
             lexer_eat(&lexer);
           } else {
@@ -236,7 +241,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '<':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_LESS_EQ;
             lexer_eat(&lexer);
           } else {
@@ -245,7 +250,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '!':
-          if (lexer_peek(&lexer, 1) == '=') {
+          if (next_c == '=') {
             current_t.type = TOKEN_NOT_EQ;
             lexer_eat(&lexer);
           } else {
@@ -254,7 +259,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '&':
-          if (lexer_peek(&lexer, 1) == '&') {
+          if (next_c == '&') {
             current_t.type = TOKEN_AND;
             lexer_eat(&lexer);
           } else {
@@ -263,7 +268,7 @@ Token *lexer(const char *buffer) {
           break;
 
         case '|':
-          if (lexer_peek(&lexer, 1) == '|') {
+          if (next_c == '|') {
             current_t.type = TOKEN_OR;
             lexer_eat(&lexer);
           }
@@ -303,8 +308,8 @@ Token *lexer(const char *buffer) {
           current_t.type = TOKEN_QUESTION;
           break;
         default:
-          if (!isspace(lexer_peek(&lexer, 0)))
-            cprintf(MSG_WARN, "unexpected symbol `%c' at line %llu col %llu\n", lexer_peek(&lexer, 0), lexer.line, lexer.col);
+          if (!isspace(current_c))
+            cprintf(MSG_WARN, "unexpected symbol `%c' at line %llu col %llu\n", current_c, lexer.line, lexer.col);
           break;
       }
     }
