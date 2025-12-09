@@ -27,6 +27,11 @@ cmake -G "MinGW Makefiles" ..
 ```
 ---
 
-## License
+## [ABOUT](docs/about.md)
+Know more about the project.
 
-This project is licensed under the **Apache-2.0 license**. See the [license](LICENSE) file for details.
+---
+## [License](LICENSE)
+This project is licensed under the **Apache-2.0 license**.
+
+---
