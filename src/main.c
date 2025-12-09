@@ -7,7 +7,7 @@
 int main(int argc, char **argv) {
   if (argc != 2) {
     cprintf(MSG_FAITAL, "incorrect usage.\n");
-    cprintf(MSG_INFO,"Correct usage :: Valt <filename.vt>\n");
+    cprintf(MSG_INFO, "Correct usage :: Valt <filename.vt>\n");
     exit(EXIT_FAILURE);
   }
   char *buffer = read_file(argv[1]);

@@ -6,7 +6,7 @@
 typedef enum {
   // LEXER HELPER TOKENS
   TOKEN_START = 0,
-  
+
   // TOKEN ID
   TOKEN_IDENTIFIER,
 
@@ -104,7 +104,7 @@ typedef enum {
   TOKEN_LIT_STRING,
   TOKEN_LIT_BOOLEAN_TRUE,
   TOKEN_LIT_BOOLEAN_FALSE,
-  
+
   // Ending TOKEN
   TOKEN_END
 } TokenType;
