@@ -145,11 +145,11 @@ Token *lexer(const char *buffer) {
     } else {
       switch (current_c) {
         case '\'': // Lex Char literals
-          add_token(&tail, get_char_lit(&lexer));
+          current_t = get_char_lit(&lexer);
           break;
 
         case '\"': // Lex String Literals
-          add_token(&tail, get_string_lit(&lexer));
+          current_t = get_string_lit(&lexer);
           break;
 
         case '/':
